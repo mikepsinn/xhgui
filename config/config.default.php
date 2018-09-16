@@ -5,20 +5,17 @@
 return array(
     'debug' => false,
     'mode' => 'development',
-
     // Can be either mongodb or file.
-    /* 
+    /*
     'save.handler' => 'file',
     'save.handler.filename' => dirname(__DIR__) . '/cache/' . 'xhgui.data.' . microtime(true) . '_' . substr(md5($url), 0, 6),
     */
     'save.handler' => 'mongodb',
-
-    // Needed for file save handler. Beware of file locking. You can adujst this file path 
+    // Needed for file save handler. Beware of file locking. You can adujst this file path
     // to reduce locking problems (eg uniqid, time ...)
     //'save.handler.filename' => __DIR__.'/../data/xhgui_'.date('Ymd').'.dat',
     'db.host' => 'mongodb://127.0.0.1:27017',
     'db.db' => 'xhprof',
-
     // Allows you to pass additional options like replicaSet to MongoClient.
     // 'username', 'password' and 'db' (where the user is added)
     'db.options' => array(),
@@ -26,17 +23,22 @@ return array(
     'date.format' => 'M jS H:i:s',
     'detail.count' => 6,
     'page.limit' => 25,
-
     // Profile 1 in 100 requests.
     // You can return true to profile every request.
     'profiler.enable' => function() {
-        return rand(1, 100) === 42;
+        $url = $_SERVER['REQUEST_URI'];
+        if (strpos($url, '/xhgui/') === 0) {return false;}
+        $profilesPer100 = 100;
+        if(getenv('XHGUI_PROFILES_PER_100')){
+            $profilesPer100 = intval(getenv('XHGUI_PROFILES_PER_100'));
+        }
+        $rand = mt_rand(0, 99);
+        return $rand < $profilesPer100;
     },
-
     'profiler.simple_url' => function($url) {
+        $url = str_replace('.quantimo.do', '', $url);
+        $url = str_replace('/api/', '', $url);
         return preg_replace('/\=\d+/', '', $url);
     },
-
     'profiler.options' => array(),
-
 );
