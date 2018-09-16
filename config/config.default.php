@@ -40,5 +40,7 @@ return array(
         $url = str_replace('/api/', '', $url);
         return preg_replace('/\=\d+/', '', $url);
     },
-    'profiler.options' => array(),
+    'profiler.options' => [
+        'ignored_functions' => ['call_user_func', 'call_user_func_array']
+    ],
 );
