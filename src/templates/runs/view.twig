@@ -26,7 +26,7 @@
             <li>{{ helpers.property_list('GET', result.meta('get')) }}</li>
 
             <li class="nav-header">SERVER</li>
-            {% if mode === 'development' and debug %}
+            {% if mode is sameas('development') and debug %}
                 <li>{{ helpers.property_list('SERVER', result.meta('SERVER')) }}</li>
             {% else %}
                 <li>Set debug true and app mode to development in config.php to see $_SERVER data</li>
