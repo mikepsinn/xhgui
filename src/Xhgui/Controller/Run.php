@@ -41,6 +41,8 @@ class Xhgui_Controller_Run extends Xhgui_Controller
             'perPage' => $this->app->config('page.limit'),
             'conditions' => $search,
             'projection' => true,
+            'debug' => $this->app->config('debug'),
+            'mode' => $this->app->config('mode'),
         ));
 
         $title = 'Recent runs';
@@ -68,7 +70,9 @@ class Xhgui_Controller_Run extends Xhgui_Controller
             'date_format' => $this->app->config('date.format'),
             'search' => $search,
             'has_search' => strlen(implode('', $search)) > 0,
-            'title' => $title
+            'title' => $title,
+            'debug' => $this->app->config('debug'),
+            'mode' => $this->app->config('mode'),
         ));
     }
 
@@ -105,6 +109,8 @@ class Xhgui_Controller_Run extends Xhgui_Controller
             'memory' => $memoryChart,
             'watches' => $watchedFunctions,
             'date_format' => $this->app->config('date.format'),
+            'debug' => $this->app->config('debug'),
+            'mode' => $this->app->config('mode'),
         ));
     }
 
@@ -187,6 +193,8 @@ class Xhgui_Controller_Run extends Xhgui_Controller
             'chart_data' => $chartData,
             'date_format' => $this->app->config('date.format'),
             'search' => array_merge($search, array('url' => $request->get('url'))),
+            'debug' => $this->app->config('debug'),
+            'mode' => $this->app->config('mode'),
         ));
     }
 
@@ -242,7 +250,9 @@ class Xhgui_Controller_Run extends Xhgui_Controller
             'search' => array(
                 'base' => $request->get('base'),
                 'head' => $request->get('head'),
-            )
+            ),
+            'debug' => $this->app->config('debug'),
+            'mode' => $this->app->config('mode'),
         ));
     }
 
