@@ -4,3 +4,4 @@
 /vendor/
 /config/config.php
 /docker-compose.override.yml
+.idea/
