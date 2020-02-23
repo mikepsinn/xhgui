@@ -66,6 +66,9 @@
             <td>
               <a href="{{ url('run.view', {'id': result.id|trim }) }}">
                 {{ result.date|date(date_format) }}
+              </a> 
+              <a href="{{ url('run.view', {'id': result.id|trim, 'filter': true }) }}">
+                [filter]
               </a>
             </td>
             <td class="right">{{ result.get('main()', 'wt') |as_time }}</td>
@@ -73,7 +76,7 @@
             <td class="right">{{ result.get('main()', 'mu') |as_bytes }}</td>
             <td class="right">{{ result.get('main()', 'pmu') |as_bytes }}</td>
             <td>
-                <a href="{{ url('run.delete', {'id': result.id|trim }) }}">
+                <a href="{{ url('run.delete.form', {'id': result.id|trim }) }}">
                     <i class="icon-trash"></i>
                 </a>
             </td>

@@ -1,6 +1,6 @@
 <?php
 
-class ProfileTest extends PHPUnit_Framework_TestCase
+class ProfileTest extends PHPUnit\Framework\TestCase
 {
     public function setUp()
     {
@@ -334,7 +334,7 @@ class ProfileTest extends PHPUnit_Framework_TestCase
             $result['diff']['strpos()']['ewt'],
             'Should include exclusives'
         );
-        $this->assertEquals(0.5, $result['diffPercent']['functionCount']);
+        $this->assertEquals(0.33, number_format($result['diffPercent']['functionCount'], 2));
     }
 
     public function testGetCallgraph()

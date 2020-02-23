@@ -31,12 +31,22 @@ $app->get('/run/view', function () use ($di, $app) {
 })->name('run.view');
 
 $app->get('/run/delete', function () use ($di, $app) {
-    $di['runController']->delete();
-})->name('run.delete');
+    $app->controller = $di['runController'];
+    $app->controller->deleteForm();
+})->name('run.delete.form');
+
+$app->post('/run/delete', function () use ($di, $app) {
+    $di['runController']->deleteSubmit();
+})->name('run.delete.submit');
 
 $app->get('/run/delete_all', function () use ($di, $app) {
-    $di['runController']->deleteAll();
-})->name('run.deleteAll');
+    $app->controller = $di['runController'];
+    $app->controller->deleteAllForm();
+})->name('run.deleteAll.form');
+
+$app->post('/run/delete_all', function () use ($di, $app) {
+    $di['runController']->deleteAllSubmit();
+})->name('run.deleteAll.submit');
 
 $app->get('/url/view', function () use ($di, $app) {
     $app->controller = $di['runController'];

@@ -1,7 +1,7 @@
 <?php
 use Slim\Environment;
 
-class Controller_RunTest extends PHPUnit_Framework_TestCase
+class Controller_RunTest extends PHPUnit\Framework\TestCase
 {
     public function setUp()
     {
@@ -20,10 +20,12 @@ class Controller_RunTest extends PHPUnit_Framework_TestCase
         $di['app'] = $di->share(function ($c) use ($mock) {
             return $mock;
         });
+        $this->import = $di['importController'];
         $this->runs = $di['runController'];
         $this->app = $di['app'];
-        $this->profiles = $di['profiles'];
+        $this->profiles = $di['searcher.mongo'];
         $this->profiles->truncate();
+        $this->saver = $di['saver.mongo'];
     }
 
     public function testIndexEmpty()
@@ -137,7 +139,7 @@ class Controller_RunTest extends PHPUnit_Framework_TestCase
 
     public function testCallgraph()
     {
-        loadFixture($this->profiles, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
+        loadFixture($this->saver, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
         Environment::mock(array(
             'SCRIPT_NAME' => 'index.php',
             'PATH_INFO' => '/',
@@ -153,7 +155,7 @@ class Controller_RunTest extends PHPUnit_Framework_TestCase
 
     public function testCallgraphData()
     {
-        loadFixture($this->profiles, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
+        loadFixture($this->saver, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
         Environment::mock(array(
             'SCRIPT_NAME' => 'index.php',
             'PATH_INFO' => '/',
@@ -167,14 +169,17 @@ class Controller_RunTest extends PHPUnit_Framework_TestCase
         $this->assertStringStartsWith('{"', $response->body());
     }
 
-    public function testDelete()
+    public function testDeleteSubmit()
     {
-        loadFixture($this->profiles, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
+        loadFixture($this->saver, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
 
         Environment::mock(array(
+            'REQUEST_METHOD' => 'POST',
             'SCRIPT_NAME' => 'index.php',
             'PATH_INFO' => '/run/delete',
-            'QUERY_STRING' => 'id=aaaaaaaaaaaaaaaaaaaaaaaa',
+            'slim.request.form_hash' => [
+                'id' => 'aaaaaaaaaaaaaaaaaaaaaaaa',
+            ],
         ));
 
         $this->app->expects($this->once())
@@ -187,15 +192,15 @@ class Controller_RunTest extends PHPUnit_Framework_TestCase
         $result = $this->profiles->getAll();
         $this->assertCount(5, $result['results']);
 
-        $this->runs->delete();
+        $this->runs->deleteSubmit();
 
         $result = $this->profiles->getAll();
         $this->assertCount(4, $result['results']);
     }
 
-    public function testDeleteAll()
+    public function testDeleteAllSubmit()
     {
-        loadFixture($this->profiles, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
+        loadFixture($this->saver, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
 
         Environment::mock(array(
           'SCRIPT_NAME' => 'index.php',
@@ -212,9 +217,57 @@ class Controller_RunTest extends PHPUnit_Framework_TestCase
         $result = $this->profiles->getAll();
         $this->assertCount(5, $result['results']);
 
-        $this->runs->deleteAll();
+        $this->runs->deleteAllSubmit();
 
         $result = $this->profiles->getAll();
         $this->assertCount(0, $result['results']);
+    }
+
+    public function testFilterCustomMethods()
+    {
+        loadFixture($this->saver, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
+
+        Environment::mock(array(
+            'SCRIPT_NAME' => 'index.php',
+            'PATH_INFO' => '/run/view',
+            'QUERY_STRING' => 'id=aaaaaaaaaaaaaaaaaaaaaaad&filter=main*,strpos()',
+        ));
+
+        $this->runs->view();
+        $result = $this->runs->templateVars();
+
+        $this->assertCount(1, $result['profile']);
+    }
+
+    public function testFilterCustomMethod()
+    {
+        loadFixture($this->saver, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
+
+        Environment::mock(array(
+            'SCRIPT_NAME' => 'index.php',
+            'PATH_INFO' => '/run/view',
+            'QUERY_STRING' => 'id=aaaaaaaaaaaaaaaaaaaaaaad&filter=main*',
+        ));
+
+        $this->runs->view();
+        $result = $this->runs->templateVars();
+
+        $this->assertCount(2, $result['profile']);
+    }
+
+    public function testFilterMethods()
+    {
+        loadFixture($this->saver, XHGUI_ROOT_DIR . '/tests/fixtures/results.json');
+
+        Environment::mock(array(
+            'SCRIPT_NAME' => 'index.php',
+            'PATH_INFO' => '/run/view',
+            'QUERY_STRING' => 'id=aaaaaaaaaaaaaaaaaaaaaaad&filter=true',
+        ));
+
+        $this->runs->view();
+        $result = $this->runs->templateVars();
+
+        $this->assertCount(2, $result['profile']);
     }
 }

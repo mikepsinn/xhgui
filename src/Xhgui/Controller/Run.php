@@ -5,24 +5,30 @@ use Slim\Slim;
 class Xhgui_Controller_Run extends Xhgui_Controller
 {
     /**
-     * @var Xhgui_Profiles
+     * HTTP GET attribute name for comma separated filters
      */
-    private $profiles;
+    const FILTER_ARGUMENT_NAME = 'filter';
 
     /**
-     * @var Xhgui_WatchFunctions
+     * @var Xhgui_Searcher_Interface
      */
-    private $watches;
+    private $searcher;
 
-    public function __construct(Slim $app, Xhgui_Profiles $profiles, Xhgui_WatchFunctions $watches)
+    public function __construct(Slim $app, Xhgui_Searcher_Interface $searcher)
     {
-        $this->app = $app;
-        $this->profiles = $profiles;
-        $this->watches = $watches;
+        parent::__construct($app);
+        $this->searcher = $searcher;
     }
 
     public function index()
     {
+        $response = $this->app->response();
+        // The list changes whenever new profiles are recorded.
+        // Generally avoid caching, but allow re-use in browser's bfcache
+        // and by cache proxies for concurrent requests.
+        // https://github.com/perftools/xhgui/issues/261
+        $response->headers->set('Cache-Control', 'public, max-age=0');
+
         $request = $this->app->request();
 
         $search = array();
@@ -34,7 +40,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
         }
         $sort = $request->get('sort');
 
-        $result = $this->profiles->getAll(array(
+        $result = $this->searcher->getAll(array(
             'sort' => $sort,
             'page' => $request->get('page'),
             'direction' => $request->get('direction'),
@@ -78,9 +84,19 @@ class Xhgui_Controller_Run extends Xhgui_Controller
 
     public function view()
     {
+        $response = $this->app->response();
+        // Permalink views to a specific run are meant to be public and immutable.
+        // But limit the cache to only a short period of time (enough to allow
+        // handling of abuse or other stampedes). This way we don't have to
+        // deal with any kind of purging system for when profiles are deleted,
+        // or for after XHGui itself is upgraded and static assets may be
+        // incompatible etc.
+        // https://github.com/perftools/xhgui/issues/261
+        $response->headers->set('Cache-Control', 'public, max-age=60, must-revalidate');
+
         $request = $this->app->request();
         $detailCount = $this->app->config('detail.count');
-        $result = $this->profiles->get($request->get('id'));
+        $result = $this->searcher->get($request->get('id'));
 
         $result->calculateSelf();
 
@@ -92,14 +108,18 @@ class Xhgui_Controller_Run extends Xhgui_Controller
 
         // Watched Functions Block
         $watchedFunctions = array();
-        foreach ($this->watches->getAll() as $watch) {
+        foreach ($this->searcher->getAllWatches() as $watch) {
             $matches = $result->getWatched($watch['name']);
             if ($matches) {
                 $watchedFunctions = array_merge($watchedFunctions, $matches);
             }
         }
 
-        $profile = $result->sort('ewt', $result->getProfile());
+        if (false !== $request->get(self::FILTER_ARGUMENT_NAME, false)) {
+            $profile = $result->sort('ewt', $result->filter($result->getProfile(), $this->getFilters()));
+        } else {
+            $profile = $result->sort('ewt', $result->getProfile());
+        }
 
         $this->_template = 'runs/view.twig';
         $this->set(array(
@@ -114,35 +134,73 @@ class Xhgui_Controller_Run extends Xhgui_Controller
         ));
     }
 
-    public function delete()
+    /**
+     * @return array
+     */
+    protected function getFilters()
+    {
+        $request = $this->app->request();
+        $filterString = $request->get(self::FILTER_ARGUMENT_NAME);
+        if (strlen($filterString) > 1 && $filterString !== 'true') {
+            $filters = array_map('trim', explode(',', $filterString));
+        } else {
+            $filters = $this->app->config('run.view.filter.names');
+        }
+
+        return $filters;
+    }
+
+    public function deleteForm()
     {
         $request = $this->app->request();
         $id = $request->get('id');
+        if (!is_string($id) || !strlen($id)) {
+            throw new Exception('The "id" parameter is required.');
+        }
+
+        // Get details
+        $result = $this->searcher->get($id);
+
+        $this->_template = 'runs/delete-form.twig';
+        $this->set(array(
+            'run_id' => $id,
+            'result' => $result,
+        ));
+    }
+
+    public function deleteSubmit()
+    {
+        $request = $this->app->request();
+        $id = $request->post('id');
+        // Don't call profilers->delete() unless $id is set,
+        // otherwise it will turn the null into a MongoId and return "Sucessful".
+        if (!is_string($id) || !strlen($id)) {
+            // Form checks this already,
+            // only reachable by handcrafted or malformed requests.
+            throw new Exception('The "id" parameter is required.');
+        }
 
         // Delete the profile run.
-        $delete = $this->profiles->delete($id);
+        $this->searcher->delete($id);
 
         $this->app->flash('success', 'Deleted profile ' . $id);
 
-        $referrer = $request->getReferrer();
-        // In case route is accessed directly the referrer is not set.
-        $redirect = isset($referrer) ? $referrer : $this->app->urlFor('home');
-        $this->app->redirect($redirect);
+        $this->app->redirect($this->app->urlFor('home'));
     }
 
-    public function deleteAll()
+    public function deleteAllForm()
     {
-        $request = $this->app->request();
+        $this->_template = 'runs/delete-all-form.twig';
+    }
 
+    public function deleteAllSubmit()
+    {
         // Delete all profile runs.
-        $delete = $this->profiles->truncate();
+        $this->searcher->truncate();
 
         $this->app->flash('success', 'Deleted all profiles');
 
-        $referrer = $request->getReferrer();
-        // In case route is accessed directly the referrer is not set.
-        $redirect = isset($referrer) ? $referrer : $this->app->urlFor('home');
-        $this->app->redirect($redirect);
+        $this->app->redirect($this->app->urlFor('home'));
     }
 
     public function url()
@@ -161,17 +219,20 @@ class Xhgui_Controller_Run extends Xhgui_Controller
             $search[$key] = $request->get($key);
         }
 
-        $runs = $this->profiles->getForUrl(
+        $runs = $this->searcher->getForUrl(
             $request->get('url'),
             $pagination,
             $search
         );
 
-        if (isset($search['limit_custom']) && strlen($search['limit_custom']) > 0 && $search['limit_custom'][0] == 'P') {
+        if (isset($search['limit_custom']) &&
+            strlen($search['limit_custom']) > 0 &&
+            $search['limit_custom'][0] === 'P'
+        ) {
             $search['limit'] = $search['limit_custom'];
         }
 
-        $chartData = $this->profiles->getPercentileForUrl(
+        $chartData = $this->searcher->getPercentileForUrl(
             90,
             $request->get('url'),
             $search
@@ -206,7 +267,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
         $paging = array();
 
         if ($request->get('base')) {
-            $baseRun = $this->profiles->get($request->get('base'));
+            $baseRun = $this->searcher->get($request->get('base'));
         }
 
         if ($baseRun && !$request->get('head')) {
@@ -216,7 +277,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
                 'page' => $request->get('page'),
                 'perPage' => $this->app->config('page.limit'),
             );
-            $candidates = $this->profiles->getForUrl(
+            $candidates = $this->searcher->getForUrl(
                 $baseRun->getMeta('simple_url'),
                 $pagination
             );
@@ -230,7 +291,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
         }
 
         if ($request->get('head')) {
-            $headRun = $this->profiles->get($request->get('head'));
+            $headRun = $this->searcher->get($request->get('head'));
         }
 
         if ($baseRun && $headRun) {
@@ -262,7 +323,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
         $id = $request->get('id');
         $symbol = $request->get('symbol');
 
-        $profile = $this->profiles->get($id);
+        $profile = $this->searcher->get($id);
         $profile->calculateSelf();
         list($parents, $current, $children) = $profile->getRelatives($symbol);
 
@@ -285,7 +346,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
         $symbol = $request->get('symbol');
         $metric = $request->get('metric');
 
-        $profile = $this->profiles->get($id);
+        $profile = $this->searcher->get($id);
         $profile->calculateSelf();
         list($parents, $current, $children) = $profile->getRelatives($symbol, $metric, $threshold);
 
@@ -303,7 +364,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
     public function callgraph()
     {
         $request = $this->app->request();
-        $profile = $this->profiles->get($request->get('id'));
+        $profile = $this->searcher->get($request->get('id'));
 
         $this->_template = 'runs/callgraph.twig';
         $this->set(array(
@@ -316,7 +377,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
     {
         $request = $this->app->request();
         $response = $this->app->response();
-        $profile = $this->profiles->get($request->get('id'));
+        $profile = $this->searcher->get($request->get('id'));
         $metric = $request->get('metric') ?: 'wt';
         $threshold = (float)$request->get('threshold') ?: 0.01;
         $callgraph = $profile->getCallgraph($metric, $threshold);
@@ -329,7 +390,7 @@ class Xhgui_Controller_Run extends Xhgui_Controller
     {
         $request = $this->app->request();
         $response = $this->app->response();
-        $profile = $this->profiles->get($request->get('id'));
+        $profile = $this->searcher->get($request->get('id'));
         $metric = $request->get('metric') ?: 'wt';
         $threshold = (float)$request->get('threshold') ?: 0.01;
         $callgraph = $profile->getCallgraphNodes($metric, $threshold);

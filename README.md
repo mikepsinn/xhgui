@@ -19,7 +19,7 @@ System Requirements
 
 XHGui has the following requirements:
 
- * PHP version 5.5 or later.
+ * PHP version 5.6 or later.
  * [MongoDB Extension](http://pecl.php.net/package/mongodb) MongoDB PHP driver.
    XHGui requires verison 1.3.0 or later.
  * [MongoDB](http://www.mongodb.org/) MongoDB Itself. XHGui requires version 2.2.0 or later.
@@ -30,10 +30,10 @@ XHGui has the following requirements:
    you'll need the DOM extension (which is a dependency of PHPUnit).
 
 
-Installation
-============
+Installation from source
+========================
 
-1. Clone or download `xhgui` from Github.
+1. Clone or download `xhgui` from GitHub.
 
 2. Point your webserver to the `webroot` directory.
 
@@ -85,6 +85,23 @@ Installation
 8. Set up your webserver. The Configuration section below describes how
    to setup the rewrite rules for both nginx and apache.
 
+Installation with Docker
+========================
+
+This setup uses [docker-compose] to orchestrate docker containers.
+
+1. Clone or download `xhgui` from GitHub.
+
+2. Startup the containers: `docker-compose up -d`
+
+3. Open your browser at http://xhgui.127.0.0.1.xip.io:8142 or just http://localhost:8142
+
+4. To customize xhgui, copy `config/config.default.php` to `config/config.php` and edit that file.
+
+5. To customize docker-compose, copy `docker-compose.yml` to `docker-compose.override.yml` and edit that file.
+
+[docker-compose]: https://docs.docker.com/compose/
+
 Configuration
 =============
 
@@ -114,7 +131,7 @@ For Apache, you can do the following to enable URL rewriting:
 
 3. XHGui comes with a `.htaccess` file to enable the remaining rewrite rules.
 
-For nginx and fast-cgi, you can the following snippet as a start:
+For nginx and fast-cgi, you can use the following snippet as a start:
 
 ```nginx
 server {
@@ -143,7 +160,7 @@ server {
 Configure XHGui Profiling Rate
 -------------------------------
 
-After installing XHGui, you may want to do change how frequently you
+After installing XHGui, you may want to change how frequently you
 profile the host application. The `profiler.enable` configuration option
 allows you to provide a callback function that specifies the requests that
 are profiled. By default, XHGui profiles 1 in 100 requests.
@@ -220,6 +237,9 @@ return array(
     ]
 );
 ```
+
+In addition, if you do not want to profile all PHP built-in functions,
+you can make use of the `profiler.skip_built_in` option.
 
 Profiling a Web Request or CLI script
 =====================================
