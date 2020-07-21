@@ -32,7 +32,9 @@ class Xhgui_ServiceContainer extends Pimple
             $view = new Twig();
             $dir = __DIR__;
             $dirName = dirname(__DIR__);
-            $view->twigTemplateDirs = array($dirName . '/templates');
+            $path = $dirName . '/templates';
+            $path = strtolower($path);  // For some reason is_dir can't handle uppercase paths in Windows Subsystem for Linux
+            $view->twigTemplateDirs = array($path);
             $view->parserOptions = array(
                 'charset' => 'utf-8',
                 'cache' => $cacheDir,
