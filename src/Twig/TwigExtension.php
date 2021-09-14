@@ -91,10 +91,6 @@ class TwigExtension extends AbstractExtension
     {
         $rootUri = $this->pathPrefix();
 
-		if($_SERVER['REQUEST_URI'] === "/$rootUri/"){
-			return $path;  // Path already prefixed because env 'XHGUI_PATH_PREFIX' was set for routes
-		}
-
         return rtrim($rootUri, '/') . '/' . $path;
     }
 
@@ -136,7 +132,9 @@ class TwigExtension extends AbstractExtension
 
     private function pathPrefix(): string
     {
-        if ($this->pathPrefix !== null) {
+        if ($this->pathPrefix !== null &&
+            $_SERVER['REQUEST_URI'] !== "/$this->pathPrefix/") {
+	        // Path already prefixed because env 'XHGUI_PATH_PREFIX' was set for routes
             return $this->pathPrefix;
         }
 
