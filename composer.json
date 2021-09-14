@@ -46,7 +46,7 @@
         "symfony/phpunit-bridge": "^5.2"
     },
     "scripts": {
-        "post-install-cmd": [
+        "post-install-cmd-disabled-due-to-phpunit-bridge-conflict": [
             "@phpunit-setup"
         ],
         "cover": "simple-phpunit --coverage-clover=unittest-coverage.clover",
