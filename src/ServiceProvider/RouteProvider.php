@@ -34,9 +34,12 @@ class RouteProvider implements ServiceProviderInterface
                 'stack_trace' => $e->getTraceAsString(),
             ]);
         });
-
+		$prefix = "";
+		if($env = getenv("XHGUI_PATH_PREFIX")){
+			$prefix = "/$env";
+		}
         // Profile Runs routes
-        $app->get('/', static function () use ($di, $app): void {
+        $app->get($prefix.'/', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -45,7 +48,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->index($request, $response);
         })->setName('home');
 
-        $app->get('/run/view', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/view', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -54,7 +57,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->view($request, $response);
         })->setName('run.view');
 
-        $app->get('/run/delete', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/delete', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -62,7 +65,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->deleteForm($request);
         })->setName('run.delete.form');
 
-        $app->post('/run/delete', static function () use ($di, $app): void {
+        $app->post($prefix.'/run/delete', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -70,19 +73,19 @@ class RouteProvider implements ServiceProviderInterface
             $controller->deleteSubmit($request);
         })->setName('run.delete.submit');
 
-        $app->get('/run/delete_all', static function () use ($di): void {
+        $app->get($prefix.'/run/delete_all', static function () use ($di): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $controller->deleteAllForm();
         })->setName('run.deleteAll.form');
 
-        $app->post('/run/delete_all', static function () use ($di): void {
+        $app->post($prefix.'/run/delete_all', static function () use ($di): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $controller->deleteAllSubmit();
         })->setName('run.deleteAll.submit');
 
-        $app->get('/url/view', static function () use ($di, $app): void {
+        $app->get($prefix.'/url/view', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -90,7 +93,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->url($request);
         })->setName('url.view');
 
-        $app->get('/run/compare', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/compare', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -98,7 +101,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->compare($request);
         })->setName('run.compare');
 
-        $app->get('/run/symbol', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/symbol', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -106,7 +109,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->symbol($request);
         })->setName('run.symbol');
 
-        $app->get('/run/symbol/short', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/symbol/short', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -114,7 +117,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->symbolShort($request);
         })->setName('run.symbol-short');
 
-        $app->get('/run/callgraph', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/callgraph', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -122,7 +125,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->callgraph($request);
         })->setName('run.callgraph');
 
-        $app->get('/run/callgraph/data', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/callgraph/data', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -131,7 +134,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->callgraphData($request, $response);
         })->setName('run.callgraph.data');
 
-        $app->get('/run/callgraph/dot', static function () use ($di, $app): void {
+        $app->get($prefix.'/run/callgraph/dot', static function () use ($di, $app): void {
             /** @var Controller\RunController $controller */
             $controller = $di[Controller\RunController::class];
             $request = $app->request();
@@ -141,7 +144,7 @@ class RouteProvider implements ServiceProviderInterface
         })->setName('run.callgraph.dot');
 
         // Import route
-        $app->post('/run/import', static function () use ($di, $app): void {
+        $app->post($prefix.'/run/import', static function () use ($di, $app): void {
             /** @var Controller\ImportController $controller */
             $controller = $di[Controller\ImportController::class];
             $request = $app->request();
@@ -151,13 +154,13 @@ class RouteProvider implements ServiceProviderInterface
         })->setName('run.import');
 
         // Watch function routes.
-        $app->get('/watch', static function () use ($di): void {
+        $app->get($prefix.'/watch', static function () use ($di): void {
             /** @var Controller\WatchController $controller */
             $controller = $di[Controller\WatchController::class];
             $controller->get();
         })->setName('watch.list');
 
-        $app->post('/watch', static function () use ($di, $app): void {
+        $app->post($prefix.'/watch', static function () use ($di, $app): void {
             /** @var Controller\WatchController $controller */
             $controller = $di[Controller\WatchController::class];
             $request = $app->request();
@@ -166,13 +169,13 @@ class RouteProvider implements ServiceProviderInterface
         })->setName('watch.save');
 
         // Custom report routes.
-        $app->get('/custom', static function () use ($di): void {
+        $app->get($prefix.'/custom', static function () use ($di): void {
             /** @var Controller\CustomController $controller */
             $controller = $di[Controller\CustomController::class];
             $controller->get();
         })->setName('custom.view');
 
-        $app->get('/custom/help', static function () use ($di, $app): void {
+        $app->get($prefix.'/custom/help', static function () use ($di, $app): void {
             /** @var Controller\CustomController $controller */
             $controller = $di[Controller\CustomController::class];
             $request = $app->request();
@@ -180,7 +183,7 @@ class RouteProvider implements ServiceProviderInterface
             $controller->help($request);
         })->setName('custom.help');
 
-        $app->post('/custom/query', static function () use ($di, $app): void {
+        $app->post($prefix.'/custom/query', static function () use ($di, $app): void {
             /** @var Controller\CustomController $controller */
             $controller = $di[Controller\CustomController::class];
             $request = $app->request();
@@ -190,13 +193,13 @@ class RouteProvider implements ServiceProviderInterface
         })->setName('custom.query');
 
         // Waterfall routes
-        $app->get('/waterfall', static function () use ($di): void {
+        $app->get($prefix.'/waterfall', static function () use ($di): void {
             /** @var Controller\WaterfallController $controller */
             $controller = $di[Controller\WaterfallController::class];
             $controller->index();
         })->setName('waterfall.list');
 
-        $app->get('/waterfall/data', static function () use ($di, $app): void {
+        $app->get($prefix.'/waterfall/data', static function () use ($di, $app): void {
             /** @var Controller\WaterfallController $controller */
             $controller = $di[Controller\WaterfallController::class];
             $request = $app->request();
@@ -206,7 +209,7 @@ class RouteProvider implements ServiceProviderInterface
         })->setName('waterfall.data');
 
         // Metrics
-        $app->get('/metrics', static function () use ($di, $app): void {
+        $app->get($prefix.'/metrics', static function () use ($di, $app): void {
             /** @var Controller\MetricsController $controller */
             $controller = $di[Controller\MetricsController::class];
             $response = $app->response();
