@@ -25,11 +25,21 @@
         "ext-json": "*",
         "alcaeus/mongo-php-adapter": "^1.1",
         "pimple/pimple": "^3.0",
-        "slim/slim": "^2.6.3",
-        "slim/views": "^0.1.0",
+        "slim/slim": "dev-2.x-PHP7.4",
+        "slim/views": "dev-no-slim",
         "symfony/options-resolver": "^3.3",
         "twig/twig": "^1.26"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/mikepsinn/Slim"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/mikepsinn/Slim-Views"
+        }
+    ],
     "require-dev": {
         "glen/php-cs-fixer-config": "^0.3.0",
         "ocramius/lazy-property": "^1.0",
