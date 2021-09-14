@@ -89,9 +89,9 @@ class TwigExtension extends AbstractExtension
      */
     public function staticUrl(string $path): string
     {
-        $rootUri = $this->pathPrefix();
+        $rootUri = $this->pathPrefix;
 
-        return rtrim($rootUri, '/') . '/' . $path;
+        return "/".rtrim($rootUri, '/') . '/' . $path;
     }
 
     public function formatBytes($value): string
@@ -133,7 +133,7 @@ class TwigExtension extends AbstractExtension
     private function pathPrefix(): string
     {
         if ($this->pathPrefix !== null &&
-            $_SERVER['REQUEST_URI'] !== "/$this->pathPrefix/") {
+            strpos($_SERVER['REQUEST_URI'], "/$this->pathPrefix/") !== 0) {
 	        // Path already prefixed because env 'XHGUI_PATH_PREFIX' was set for routes
             return $this->pathPrefix;
         }

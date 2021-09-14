@@ -17,4 +17,5 @@ use XHGui\Application;
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 $app = new Application();
+//xdebug_break();
 $app->run();
